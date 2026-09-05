@@ -1,0 +1,130 @@
+{
+  "info": {
+    "name": "Bot Facturación — WhatsApp Webhook",
+    "description": "Colección para probar el webhook del bot localmente con ngrok.\n\n**Prerequisito:** Tener ngrok corriendo: `ngrok http 5000`\n\nActualiza la variable `base_url` con la URL de ngrok.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://TU-ID.ngrok.io",
+      "description": "URL pública de ngrok (actualizar en cada sesión)"
+    },
+    {
+      "key": "phone_number",
+      "value": "521XXXXXXXXXX",
+      "description": "Número de teléfono de prueba (con código de país, sin +)"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Verificar Webhook (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/webhook?hub.mode=subscribe&hub.verify_token=MI_TOKEN_SECRETO_PARA_VERIFICACION&hub.challenge=CHALLENGE_123",
+          "host": ["{{base_url}}"],
+          "path": ["webhook"],
+          "query": [
+            { "key": "hub.mode", "value": "subscribe" },
+            { "key": "hub.verify_token", "value": "MI_TOKEN_SECRETO_PARA_VERIFICACION" },
+            { "key": "hub.challenge", "value": "CHALLENGE_123" }
+          ]
+        },
+        "description": "Simula la verificación del webhook que hace Meta al configurarlo.\nDebe responder 200 con 'CHALLENGE_123'."
+      }
+    },
+    {
+      "name": "2. Mensaje de texto — Hola",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [{\n    \"id\": \"BUSINESS_ID\",\n    \"changes\": [{\n      \"value\": {\n        \"messaging_product\": \"whatsapp\",\n        \"metadata\": { \"display_phone_number\": \"5200000000\", \"phone_number_id\": \"PHONE_ID\" },\n        \"contacts\": [{ \"profile\": { \"name\": \"Cliente Prueba\" }, \"wa_id\": \"{{phone_number}}\" }],\n        \"messages\": [{\n          \"from\": \"{{phone_number}}\",\n          \"id\": \"wamid.TEST001\",\n          \"timestamp\": \"1716163200\",\n          \"type\": \"text\",\n          \"text\": { \"body\": \"hola\" }\n        }]\n      },\n      \"field\": \"messages\"\n    }]\n  }]\n}"
+        },
+        "url": { "raw": "{{base_url}}/webhook", "host": ["{{base_url}}"], "path": ["webhook"] },
+        "description": "Envía 'hola' — el bot debe responder con el menú principal."
+      }
+    },
+    {
+      "name": "3. Selección de menú — Agendar cita (botón)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [{\n    \"id\": \"BUSINESS_ID\",\n    \"changes\": [{\n      \"value\": {\n        \"messaging_product\": \"whatsapp\",\n        \"metadata\": { \"display_phone_number\": \"5200000000\", \"phone_number_id\": \"PHONE_ID\" },\n        \"contacts\": [{ \"profile\": { \"name\": \"Cliente Prueba\" }, \"wa_id\": \"{{phone_number}}\" }],\n        \"messages\": [{\n          \"from\": \"{{phone_number}}\",\n          \"id\": \"wamid.TEST002\",\n          \"timestamp\": \"1716163260\",\n          \"type\": \"interactive\",\n          \"interactive\": {\n            \"type\": \"button_reply\",\n            \"button_reply\": { \"id\": \"MENU_CITA\", \"title\": \"Agendar cita\" }\n          }\n        }]\n      },\n      \"field\": \"messages\"\n    }]\n  }]\n}"
+        },
+        "url": { "raw": "{{base_url}}/webhook", "host": ["{{base_url}}"], "path": ["webhook"] },
+        "description": "Simula el clic en el botón 'Agendar cita' del menú principal."
+      }
+    },
+    {
+      "name": "4. Respuesta — Nombre del paciente",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [{\n    \"id\": \"BUSINESS_ID\",\n    \"changes\": [{\n      \"value\": {\n        \"messaging_product\": \"whatsapp\",\n        \"metadata\": { \"display_phone_number\": \"5200000000\", \"phone_number_id\": \"PHONE_ID\" },\n        \"contacts\": [{ \"profile\": { \"name\": \"Cliente Prueba\" }, \"wa_id\": \"{{phone_number}}\" }],\n        \"messages\": [{\n          \"from\": \"{{phone_number}}\",\n          \"id\": \"wamid.TEST003\",\n          \"timestamp\": \"1716163320\",\n          \"type\": \"text\",\n          \"text\": { \"body\": \"María López García\" }\n        }]\n      },\n      \"field\": \"messages\"\n    }]\n  }]\n}"
+        },
+        "url": { "raw": "{{base_url}}/webhook", "host": ["{{base_url}}"], "path": ["webhook"] },
+        "description": "Envía el nombre del paciente al bot (paso 1 del flujo Agendar Cita)."
+      }
+    },
+    {
+      "name": "5. Solicitar factura — Texto",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [{\n    \"id\": \"BUSINESS_ID\",\n    \"changes\": [{\n      \"value\": {\n        \"messaging_product\": \"whatsapp\",\n        \"metadata\": { \"display_phone_number\": \"5200000000\", \"phone_number_id\": \"PHONE_ID\" },\n        \"contacts\": [{ \"profile\": { \"name\": \"Cliente Prueba\" }, \"wa_id\": \"{{phone_number}}\" }],\n        \"messages\": [{\n          \"from\": \"{{phone_number}}\",\n          \"id\": \"wamid.TEST010\",\n          \"timestamp\": \"1716163500\",\n          \"type\": \"text\",\n          \"text\": { \"body\": \"factura\" }\n        }]\n      },\n      \"field\": \"messages\"\n    }]\n  }]\n}"
+        },
+        "url": { "raw": "{{base_url}}/webhook", "host": ["{{base_url}}"], "path": ["webhook"] },
+        "description": "Inicia el flujo de solicitud de factura escribiendo 'factura'."
+      }
+    },
+    {
+      "name": "6. RFC válido — Persona física",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [{\n    \"id\": \"BUSINESS_ID\",\n    \"changes\": [{\n      \"value\": {\n        \"messaging_product\": \"whatsapp\",\n        \"metadata\": { \"display_phone_number\": \"5200000000\", \"phone_number_id\": \"PHONE_ID\" },\n        \"contacts\": [{ \"profile\": { \"name\": \"Cliente Prueba\" }, \"wa_id\": \"{{phone_number}}\" }],\n        \"messages\": [{\n          \"from\": \"{{phone_number}}\",\n          \"id\": \"wamid.TEST011\",\n          \"timestamp\": \"1716163560\",\n          \"type\": \"text\",\n          \"text\": { \"body\": \"LOGJ850312AB3\" }\n        }]\n      },\n      \"field\": \"messages\"\n    }]\n  }]\n}"
+        },
+        "url": { "raw": "{{base_url}}/webhook", "host": ["{{base_url}}"], "path": ["webhook"] },
+        "description": "Envía un RFC válido de persona física (13 caracteres)."
+      }
+    },
+    {
+      "name": "7. RFC inválido — Prueba de validación",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [{\n    \"id\": \"BUSINESS_ID\",\n    \"changes\": [{\n      \"value\": {\n        \"messaging_product\": \"whatsapp\",\n        \"metadata\": { \"display_phone_number\": \"5200000000\", \"phone_number_id\": \"PHONE_ID\" },\n        \"contacts\": [{ \"profile\": { \"name\": \"Cliente Prueba\" }, \"wa_id\": \"{{phone_number}}\" }],\n        \"messages\": [{\n          \"from\": \"{{phone_number}}\",\n          \"id\": \"wamid.TEST012\",\n          \"timestamp\": \"1716163620\",\n          \"type\": \"text\",\n          \"text\": { \"body\": \"RFCMALFORMADO\" }\n        }]\n      },\n      \"field\": \"messages\"\n    }]\n  }]\n}"
+        },
+        "url": { "raw": "{{base_url}}/webhook", "host": ["{{base_url}}"], "path": ["webhook"] },
+        "description": "Envía un RFC con formato inválido. El bot debe rechazarlo con un mensaje de error."
+      }
+    },
+    {
+      "name": "8. Cancelar operación",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [{\n    \"id\": \"BUSINESS_ID\",\n    \"changes\": [{\n      \"value\": {\n        \"messaging_product\": \"whatsapp\",\n        \"metadata\": { \"display_phone_number\": \"5200000000\", \"phone_number_id\": \"PHONE_ID\" },\n        \"contacts\": [{ \"profile\": { \"name\": \"Cliente Prueba\" }, \"wa_id\": \"{{phone_number}}\" }],\n        \"messages\": [{\n          \"from\": \"{{phone_number}}\",\n          \"id\": \"wamid.TEST099\",\n          \"timestamp\": \"1716163680\",\n          \"type\": \"text\",\n          \"text\": { \"body\": \"cancelar\" }\n        }]\n      },\n      \"field\": \"messages\"\n    }]\n  }]\n}"
+        },
+        "url": { "raw": "{{base_url}}/webhook", "host": ["{{base_url}}"], "path": ["webhook"] },
+        "description": "Envía 'cancelar' — funciona en cualquier paso y reinicia el flujo."
+      }
+    }
+  ]
+}

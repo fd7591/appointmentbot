@@ -1,0 +1,38 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+
+## Credenciales — NUNCA subir al repositorio
+src/API/config/google-service-account.json
+**/google-service-account*.json
+**/*service-account*.json
+
+## appsettings con secretos (usar variables de entorno en producción)
+src/API/appsettings.json
+src/API/appsettings.*.json
+**/secrets.json
+
+## Credenciales y publish settings
+config/
+*.publishSettings
+
+# Credenciales Google Service Account
+config/*.json
+
+## EF Core migraciones temporales
+**/Migrations/
+
+## Logs
+*.log
+logs/
+
+## Publish output
+publish/
+dist/
+
+## Docker
+.dockerignore
