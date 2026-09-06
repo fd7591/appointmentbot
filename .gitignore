@@ -36,3 +36,4 @@ dist/
 
 ## Docker
 .dockerignore
+.DS_Store

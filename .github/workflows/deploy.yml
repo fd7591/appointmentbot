@@ -49,7 +49,7 @@ jobs:
           $msdeployArgs = @(
             '-verb:sync',
             "-source:contentPath=$publishPath",
-            "-dest:contentPath=$site,computerName=https://$url/msdeploy.axd?site=$site,userName=$user,password=$pass,authType=Basic",
+            "-dest:contentPath=$site,computerName=https://${url}:8172/msdeploy.axd?site=$site,userName=$user,password=$pass,authType=Basic",
             '-allowUntrusted',
             '-enableRule:AppOffline'
           )
