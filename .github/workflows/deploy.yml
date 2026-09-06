@@ -28,8 +28,13 @@ jobs:
         run: dotnet publish src/API/botFacturacion.API.csproj --configuration Release --no-build --output ./publish
 
       - name: Deploy via MSDeploy
+        shell: pwsh
         run: |
-          msdeploy.exe `
+          $msdeploy = "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe"
+          if (!(Test-Path $msdeploy)) {
+            $msdeploy = "C:\Program Files (x86)\IIS\Microsoft Web Deploy V3\msdeploy.exe"
+          }
+          & $msdeploy `
             -verb:sync `
             -source:contentPath="${{ github.workspace }}\publish" `
             -dest:contentPath="${{ secrets.MSDEPLOY_SITE }}",computerName="https://${{ secrets.MSDEPLOY_URL }}/msdeploy.axd?site=${{ secrets.MSDEPLOY_SITE }}",userName="${{ secrets.MSDEPLOY_USERNAME }}",password="${{ secrets.MSDEPLOY_PASSWORD }}",authType="Basic" `
