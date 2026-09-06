@@ -27,11 +27,81 @@ jobs:
       - name: Publish
         run: dotnet publish src/API/botFacturacion.API.csproj --configuration Release --no-build --output ./publish
 
+      - name: Inject secrets into appsettings.json
+        shell: pwsh
+        env:
+          DB_CONNECTION_STRING:        ${{ secrets.DB_CONNECTION_STRING }}
+          WA_PHONE_NUMBER_ID:          ${{ secrets.WA_PHONE_NUMBER_ID }}
+          WA_ACCESS_TOKEN:             ${{ secrets.WA_ACCESS_TOKEN }}
+          WA_VERIFY_TOKEN:             ${{ secrets.WA_VERIFY_TOKEN }}
+          SHEETS_SPREADSHEET_ID:       ${{ secrets.SHEETS_SPREADSHEET_ID }}
+          CALENDAR_ID:                 ${{ secrets.CALENDAR_ID }}
+          AZURE_DOC_INTEL_ENDPOINT:    ${{ secrets.AZURE_DOC_INTEL_ENDPOINT }}
+          AZURE_DOC_INTEL_API_KEY:     ${{ secrets.AZURE_DOC_INTEL_API_KEY }}
+        run: |
+          $config = @{
+            ConnectionStrings = @{
+              DefaultConnection = $env:DB_CONNECTION_STRING
+            }
+            WhatsApp = @{
+              PhoneNumberId = $env:WA_PHONE_NUMBER_ID
+              AccessToken   = $env:WA_ACCESS_TOKEN
+              VerifyToken   = $env:WA_VERIFY_TOKEN
+              ApiVersion    = "v19.0"
+            }
+            GoogleSheets = @{
+              ServiceAccountPath = "config/google-service-account.json"
+              SpreadsheetId      = $env:SHEETS_SPREADSHEET_ID
+              SheetName          = "Hoja 1"
+            }
+            App = @{
+              SessionTimeoutMinutes            = 30
+              ReminderHoursBeforeAppointment   = 24
+              FacturacionSoloMesActual         = $true
+            }
+            GoogleCalendar = @{
+              ServiceAccountPath = "config/google-service-account.json"
+              CalendarId         = $env:CALENDAR_ID
+              TimeZone           = "America/Mexico_City"
+              HoraInicio         = "09:00"
+              HoraFin            = "13:00"
+              SlotMinutos        = 30
+            }
+            AzureDocumentIntelligence = @{
+              Endpoint = $env:AZURE_DOC_INTEL_ENDPOINT
+              ApiKey   = $env:AZURE_DOC_INTEL_API_KEY
+              ModelId  = "prebuilt-layout"
+            }
+            PAC = @{
+              Endpoint = ""
+              Username = ""
+              Password = ""
+            }
+            Logging = @{
+              LogLevel = @{
+                Default                                        = "Information"
+                "Microsoft.AspNetCore"                         = "Warning"
+                "Microsoft.EntityFrameworkCore.Database.Command" = "Warning"
+              }
+            }
+            AllowedHosts = "*"
+          }
+          $config | ConvertTo-Json -Depth 10 | Set-Content -Encoding UTF8 "${{ github.workspace }}\publish\appsettings.json"
+
+      - name: Write Google Service Account JSON
+        shell: pwsh
+        env:
+          GOOGLE_SA_JSON: ${{ secrets.GOOGLE_SA_JSON }}
+        run: |
+          $configDir = "${{ github.workspace }}\publish\config"
+          New-Item -ItemType Directory -Force -Path $configDir | Out-Null
+          $env:GOOGLE_SA_JSON | Set-Content -Encoding UTF8 "$configDir\google-service-account.json"
+
       - name: Deploy via MSDeploy
         shell: pwsh
         env:
-          MSDEPLOY_SITE: ${{ secrets.MSDEPLOY_SITE }}
-          MSDEPLOY_URL: ${{ secrets.MSDEPLOY_URL }}
+          MSDEPLOY_SITE:     ${{ secrets.MSDEPLOY_SITE }}
+          MSDEPLOY_URL:      ${{ secrets.MSDEPLOY_URL }}
           MSDEPLOY_USERNAME: ${{ secrets.MSDEPLOY_USERNAME }}
           MSDEPLOY_PASSWORD: ${{ secrets.MSDEPLOY_PASSWORD }}
         run: |
@@ -41,10 +111,10 @@ jobs:
           }
 
           $publishPath = "${{ github.workspace }}\publish"
-          $site   = $env:MSDEPLOY_SITE
-          $url    = $env:MSDEPLOY_URL
-          $user   = $env:MSDEPLOY_USERNAME
-          $pass   = $env:MSDEPLOY_PASSWORD
+          $site = $env:MSDEPLOY_SITE
+          $url  = $env:MSDEPLOY_URL
+          $user = $env:MSDEPLOY_USERNAME
+          $pass = $env:MSDEPLOY_PASSWORD
 
           $msdeployArgs = @(
             '-verb:sync',

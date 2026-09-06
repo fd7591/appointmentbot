@@ -11,9 +11,8 @@ src/API/config/google-service-account.json
 **/google-service-account*.json
 **/*service-account*.json
 
-## appsettings con secretos (usar variables de entorno en producción)
-src/API/appsettings.json
-src/API/appsettings.*.json
+## appsettings con secretos — solo el de desarrollo se ignora
+src/API/appsettings.Development.json
 **/secrets.json
 
 ## Credenciales y publish settings
