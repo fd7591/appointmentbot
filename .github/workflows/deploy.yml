@@ -29,14 +29,30 @@ jobs:
 
       - name: Deploy via MSDeploy
         shell: pwsh
+        env:
+          MSDEPLOY_SITE: ${{ secrets.MSDEPLOY_SITE }}
+          MSDEPLOY_URL: ${{ secrets.MSDEPLOY_URL }}
+          MSDEPLOY_USERNAME: ${{ secrets.MSDEPLOY_USERNAME }}
+          MSDEPLOY_PASSWORD: ${{ secrets.MSDEPLOY_PASSWORD }}
         run: |
           $msdeploy = "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe"
           if (!(Test-Path $msdeploy)) {
             $msdeploy = "C:\Program Files (x86)\IIS\Microsoft Web Deploy V3\msdeploy.exe"
           }
-          & $msdeploy `
-            -verb:sync `
-            -source:contentPath="${{ github.workspace }}\publish" `
-            -dest:contentPath="${{ secrets.MSDEPLOY_SITE }}",computerName="https://${{ secrets.MSDEPLOY_URL }}/msdeploy.axd?site=${{ secrets.MSDEPLOY_SITE }}",userName="${{ secrets.MSDEPLOY_USERNAME }}",password="${{ secrets.MSDEPLOY_PASSWORD }}",authType="Basic" `
-            -allowUntrusted `
-            -enableRule:AppOffline
+
+          $publishPath = "${{ github.workspace }}\publish"
+          $site   = $env:MSDEPLOY_SITE
+          $url    = $env:MSDEPLOY_URL
+          $user   = $env:MSDEPLOY_USERNAME
+          $pass   = $env:MSDEPLOY_PASSWORD
+
+          $msdeployArgs = @(
+            '-verb:sync',
+            "-source:contentPath=$publishPath",
+            "-dest:contentPath=$site,computerName=https://$url/msdeploy.axd?site=$site,userName=$user,password=$pass,authType=Basic",
+            '-allowUntrusted',
+            '-enableRule:AppOffline'
+          )
+
+          & $msdeploy @msdeployArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
